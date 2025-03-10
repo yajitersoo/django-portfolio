@@ -1,0 +1,258 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Portfolio</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+    /* Sidebar Styling */
+    .sidebar {
+        background-color: #0f3953; /* Sidebar color */
+        height: 100vh;
+        position: fixed;
+        width: 250px;
+        padding-top: 20px;
+        overflow-y: auto;
+    }
+
+    /* Profile Image */
+    .profile-image {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #C4C4C4;
+        margin: 10px auto;
+        display: block;
+    }
+
+    /* Sidebar Links */
+    .sidebar .nav-link {
+        color: white !important;
+        padding: 10px;
+        transition: 0.3s ease-in-out;
+    }
+
+    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+        background-color: darkred !important;
+        color: white !important;
+        border-radius: 5px;
+    }
+
+    /* Main Content Area */
+    main {
+        margin-left: 250px; /* Space for sidebar */
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Full-Width Iframe */
+    .iframe-container {
+        width: 100%;
+        height: 85vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
+
+    iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background-color: white !important; /* Force white background */
+    }
+
+    /* Floating Description */
+    .floating-description {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px;
+        border-radius: 5px;
+        font-size: 12px;
+        max-width: 250px;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    iframe:hover + .floating-description {
+        opacity: 1;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 200px;
+        }
+        main {
+            margin-left: 200px;
+        }
+        .floating-description {
+            font-size: 10px;
+            bottom: 5px;
+            right: 5px;
+        }
+    }
+    hr {
+        display: block;
+        height: 2px;
+        border: 0;
+        border-top: 1px solid #ccc;
+        margin: 1em 0;
+        padding: 0;
+        border: 1px solid #C4C4C4;
+    }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Vertical Sidebar Navigation -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky text-center">
+                    <h4 class="text-white my-3">My Portfolio</h4>
+                    <hr/>
+                    <!-- Profile Section -->
+                    <img src="{% static 'portfolio/profile.jpg' %}" alt="Profile" class="profile-image">
+                    <hr/>
+                    <h5 class="text-white mt-2">Yaji Tersoo</h5>
+                    <p class="text-white">Data Analyst | Information Management Specialist | Data Scientist</p>
+                    <hr/>
+                    <!-- Tab Navigation -->
+                    <ul class="nav flex-column mt-3">
+                        {% for tab in tabs %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if forloop.first %}active{% endif %}"
+                                   id="tab-{{ tab.id }}"
+                                   href="#"
+                                   onclick="changeTab(event, '{{ tab.id }}')">
+                                    {{ tab.name }}
+                                </a>
+                            </li>
+                        {% empty %}
+                            <li class="nav-item"><p class="text-muted">No tabs available</p></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content (Dropdown + Iframe Panel) -->
+            <main class="col-md-9 col-lg-10 px-4">
+            <!-- Dropdown Above Iframe with Label -->
+            <div class="w-50 my-3 d-flex align-items-center">
+                <label for="productDropdown" class="me-2 fw-bold">Select:</label>
+                <select class="form-select" id="productDropdown" onchange="updateIframe(this)">
+                    {% for product in tabs.0.products.all %}
+                        <option value="{{ product.url }}"
+                                data-description="{{ product.description|default_if_none:'No description available' }}"
+                                {% if forloop.first %}selected{% endif %}>
+                            {{ product.title }} ({{ product.year }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+
+                <!-- Full-Width Iframe Section -->
+                <div class="iframe-container">
+                    <iframe id="productIframe" src="{{ tabs.0.products.first.url }}"></iframe>
+                    <div id="floatingDescription" class="floating-description">
+                        {{ tabs.0.products.first.description|default_if_none:"No description available" }}
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+
+
+
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function updateIframe(select) {
+        let iframe = document.getElementById('productIframe');
+        let floatingDescription = document.getElementById("floatingDescription");
+
+        // Get the selected option
+        let selectedOption = select.selectedOptions[0];
+
+        // Get description, ensure it's not empty
+        let description = selectedOption.getAttribute("data-description") || "No description available";
+
+        // Update iframe source
+        iframe.src = selectedOption.value;
+
+
+        // Update floating description dynamically
+        floatingDescription.innerText = description;
+        floatingDescription.style.opacity = "1";
+    }
+
+    function changeTab(event, tabId) {
+        event.preventDefault();
+
+        // Remove active class from all tabs
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+
+        // Set active tab
+        let clickedTab = document.getElementById(`tab-${tabId}`);
+        clickedTab.classList.add('active');
+
+        // Update dropdown content
+        let productDropdown = document.getElementById("productDropdown");
+        productDropdown.innerHTML = "";
+
+        let iframe = document.getElementById('productIframe');
+        let floatingDescription = document.getElementById("floatingDescription");
+
+        fetch(`/get-products/?tab_id=${tabId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.products.length > 0) {
+                    data.products.forEach((product, index) => {
+                        let option = document.createElement("option");
+                        option.value = product.url;
+                        option.text = `${product.title} (${product.year})`;
+                        option.setAttribute("data-description", product.description || "No description available");
+
+                        // Ensure first product is selected and updates description immediately
+                        if (index === 0) {
+                            option.selected = true;
+                            iframe.src = product.url;
+                            floatingDescription.innerText = product.description || "No description available";
+                            floatingDescription.style.opacity = "1";
+                        }
+
+                        productDropdown.appendChild(option);
+                    });
+                } else {
+                    iframe.src = "";
+                    floatingDescription.innerText = "No products available";
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching products:", error);
+            });
+    }
+
+
+
+    </script>
+
+</body>
+</html>
